@@ -57,7 +57,11 @@ async def lifespan(_: FastAPI):
 app = FastAPI(title="AOS SBE Governance Training", lifespan=lifespan)
 templates = Jinja2Templates(directory=str(BASE_DIR / "templates"))
 templates.env.filters["from_json"] = lambda value: json.loads(value or "[]")
-app.mount("/static", StaticFiles(directory=str(BASE_DIR / "static")), name="static")
+app.mount(
+    "/aos-training-static",
+    StaticFiles(directory=str(BASE_DIR / "static")),
+    name="aos_training_static",
+)
 
 
 def ensure_schema() -> None:
