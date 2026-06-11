@@ -2,11 +2,23 @@ from __future__ import annotations
 
 from fastapi.testclient import TestClient
 
+from app.database import normalize_database_url
 from app.main import app, facilitator_token
 from app.seed import DEFAULT_SESSION_ID
 
 
 client = TestClient(app)
+
+
+def test_postgres_database_url_uses_psycopg_driver() -> None:
+    assert (
+        normalize_database_url("postgresql://user:pass@example.supabase.co:5432/postgres")
+        == "postgresql+psycopg://user:pass@example.supabase.co:5432/postgres"
+    )
+    assert (
+        normalize_database_url("postgres://user:pass@example.supabase.co:5432/postgres")
+        == "postgresql+psycopg://user:pass@example.supabase.co:5432/postgres"
+    )
 
 
 def test_public_session_hides_rubrics() -> None:

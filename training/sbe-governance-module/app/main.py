@@ -18,7 +18,7 @@ from reportlab.lib import colors
 from reportlab.lib.pagesizes import A4
 from reportlab.lib.styles import getSampleStyleSheet
 from reportlab.platypus import Paragraph, SimpleDocTemplate, Spacer, Table, TableStyle
-from sqlalchemy import text
+from sqlalchemy import inspect, text
 from sqlalchemy.orm import Session
 
 from .database import Base, SessionLocal, engine, get_db
@@ -80,11 +80,17 @@ def ensure_schema() -> None:
         },
     }
     with engine.begin() as conn:
+        inspector = inspect(conn)
         for table_name, columns in migrations.items():
-            existing = {
-                row._mapping["name"]
-                for row in conn.execute(text(f"PRAGMA table_info({table_name})"))
-            }
+            if engine.dialect.name == "sqlite":
+                existing = {
+                    row._mapping["name"]
+                    for row in conn.execute(text(f"PRAGMA table_info({table_name})"))
+                }
+            else:
+                if not inspector.has_table(table_name):
+                    continue
+                existing = {column["name"] for column in inspector.get_columns(table_name)}
             for column_name, ddl in columns.items():
                 if column_name not in existing:
                     conn.execute(text(f"ALTER TABLE {table_name} ADD COLUMN {column_name} {ddl}"))

@@ -1,6 +1,6 @@
 # AOS SBE Governance Training Module
 
-This workspace contains a backend-backed FastAPI/Jinja training module for SBE governance training. It replaces standalone browser-only storage with central SQLite submissions, server-side scoring, facilitator dashboards, and secure AI grading hooks.
+This workspace contains a backend-backed FastAPI/Jinja training module for SBE governance training. It replaces standalone browser-only storage with central submissions, server-side scoring, facilitator dashboards, and secure AI grading hooks.
 
 ## Run Locally
 
@@ -54,11 +54,24 @@ Never place API keys, hidden rubrics, or expected answer guides in frontend temp
 
 ## Data Storage
 
-SQLite data is stored at:
+By default, local SQLite data is stored at:
 
 ```text
 data/aos_training.db
 ```
+
+For Replit/Supabase, set one of these environment variables to the Supabase
+Postgres connection string:
+
+```text
+AOS_TRAINING_DATABASE_URL
+DATABASE_URL
+SUPABASE_DB_URL
+POSTGRES_URL
+```
+
+`AOS_TRAINING_DATABASE_URL` is preferred because it avoids accidentally sharing
+the broader AOS app database setting unless that is intentional.
 
 The schema includes:
 
