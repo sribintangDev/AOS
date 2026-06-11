@@ -1,0 +1,95 @@
+{% extends "base.html" %}
+{% block title %}Assessment Feedback{% endblock %}
+{% block content %}
+<section class="hero compact">
+  <div>
+    <p class="eyebrow">Submission Complete</p>
+    <h1>Thank you, {{ submission.participant_name }}</h1>
+    <p>Your responses have been saved centrally and graded server-side.</p>
+    <p>{{ submission.round_label }}</p>
+  </div>
+</section>
+
+<section class="metrics">
+  <article>
+    <span>MCQ Score</span>
+    <strong>{{ "%.1f"|format(submission.mcq_score) }}%</strong>
+  </article>
+  <article>
+    <span>Case Tagging</span>
+    <strong>{{ "%.1f"|format(submission.case_tagging_score) }}%</strong>
+  </article>
+  <article>
+    <span>Open-Ended Review</span>
+    <strong>{{ "%.1f"|format(submission.ai_open_ended_score) }}%</strong>
+  </article>
+  <article>
+    <span>Total</span>
+    <strong>{{ "%.1f"|format(submission.total_score) }}%</strong>
+  </article>
+</section>
+
+<section class="panel">
+  <h2>Feedback Summary</h2>
+  <p>{{ submission.ai_feedback_summary }}</p>
+</section>
+
+<section class="panel">
+  <h2>Question Feedback</h2>
+  <div class="feedback-list">
+    {% for answer in answers %}
+    <article class="feedback-item {% if answer.discussion_flag %}flagged{% endif %}">
+      <div class="feedback-head">
+        <strong>Question {{ loop.index }}</strong>
+        <span>{{ answer.question_type | replace("_", " ") | title }}</span>
+      </div>
+      <h3>{{ answer.question_text }}</h3>
+      {% if answer.question_type == "mcq" %}
+      <ul class="option-review">
+        {% for option in answer.options %}
+        <li class="{% if option == answer.selected_option %}selected{% endif %}">
+          {{ option }}
+          {% if option == answer.selected_option %}<strong>Your choice</strong>{% endif %}
+        </li>
+        {% endfor %}
+      </ul>
+      {% elif answer.question_type == "case_tagging" %}
+      <div class="tag-review">
+        {% for tag in case_tags %}
+        <span class="{% if tag in answer.selected_tags %}selected{% endif %}">{{ tag }}</span>
+        {% endfor %}
+      </div>
+      <p class="muted">Your selected tags: {{ answer.selected_tags | join(", ") if answer.selected_tags else "None selected" }}</p>
+      {% elif answer.question_type == "open_ended" %}
+      <h4>Your selected workflow order</h4>
+      {% if answer.selected_card_labels %}
+      <ol class="selected-card-review">
+        {% for card in answer.selected_card_labels %}
+        <li>{{ card }}</li>
+        {% endfor %}
+      </ol>
+      {% else %}
+      <p class="muted">No workflow cards selected.</p>
+      {% endif %}
+      {% if answer.unused_card_labels %}
+      <details>
+        <summary>Unused cards</summary>
+        <ul>
+          {% for card in answer.unused_card_labels %}
+          <li>{{ card }}</li>
+          {% endfor %}
+        </ul>
+      </details>
+      {% endif %}
+      <h4>Your remarks</h4>
+      <p>{{ answer.answer_text or "No remarks provided." }}</p>
+      {% endif %}
+      <p>{{ answer.feedback }}</p>
+      {% if answer.detected_gaps %}
+      <p class="muted">Improvement areas: {{ answer.detected_gaps | join(", ") }}</p>
+      {% endif %}
+    </article>
+    {% endfor %}
+  </div>
+</section>
+{% endblock %}

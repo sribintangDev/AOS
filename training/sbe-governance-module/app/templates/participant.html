@@ -1,0 +1,212 @@
+{% extends "base.html" %}
+{% block title %}{{ session.title }}{% endblock %}
+{% block content %}
+<section class="hero">
+  <div>
+    <p class="eyebrow">SBE Governance Training</p>
+    <h1>{{ session.title }}</h1>
+    <p>{{ round_label }}. {{ session.description }}</p>
+  </div>
+</section>
+
+<form class="training-form" method="post" action="/training/{{ session.id }}/submit">
+  <input type="hidden" name="round_number" value="{{ round_number }}">
+  <section class="panel round-panel">
+    <h2>Training Rounds</h2>
+    <div class="round-tabs">
+      {% for number, label in rounds.items() %}
+      <a class="round-tab {% if number == round_number %}active{% endif %}" href="/training/{{ session.id }}?round={{ number }}">
+        <strong>Round {{ number }}</strong>
+        <span>{{ label.split(": ", 1)[1] }}</span>
+      </a>
+      {% endfor %}
+    </div>
+  </section>
+
+  <section class="panel">
+    <h2>Participant Details</h2>
+    <div class="field-grid">
+      <label>Name
+        <input name="participant_name" required autocomplete="name">
+      </label>
+      <label>Role / Department
+        <input name="participant_role" required autocomplete="organization-title">
+      </label>
+      <label>Email, if available
+        <input name="participant_email" type="email" autocomplete="email">
+      </label>
+    </div>
+  </section>
+
+  <section class="panel">
+    <h2>Presentation Notes</h2>
+    <div class="note-grid">
+      {% for note in notes %}
+      <article class="note">
+        <h3>{{ note.title }}</h3>
+        <p>{{ note.body }}</p>
+        <span class="visual-chip">{{ note.visual }}</span>
+      </article>
+      {% endfor %}
+    </div>
+  </section>
+
+  <section class="panel">
+    <h2>Authority & Tagging Guide</h2>
+    <div class="tag-guide-grid">
+      {% for item in tag_guidance %}
+      <article>
+        <h3>{{ item.tag }}</h3>
+        <p>{{ item.body }}</p>
+      </article>
+      {% endfor %}
+    </div>
+  </section>
+
+  <section class="panel">
+    <h2>Governance Rules</h2>
+    <ol class="rules">
+      {% for rule in rules %}
+      <li>{{ rule }}</li>
+      {% endfor %}
+    </ol>
+  </section>
+
+  <section class="panel">
+    <h2>Round {{ round_number }} MCQs</h2>
+    {% if not grouped.mcq %}
+    <p class="section-copy">No MCQs in this round.</p>
+    {% endif %}
+    {% for question in grouped.mcq %}
+    <fieldset class="question">
+      <legend>{{ loop.index }}. {{ question.question_text }}</legend>
+      {% for option in question.options | from_json %}
+      <label class="choice">
+        <input type="radio" name="q_{{ question.id }}" value="{{ option }}" required>
+        <span>{{ option }}</span>
+      </label>
+      {% endfor %}
+    </fieldset>
+    {% endfor %}
+  </section>
+
+  <section class="panel">
+    <h2>Round {{ round_number }} Case Tagging</h2>
+    <p class="section-copy">Select every authority or department that applies. Some cases require more than one tag.</p>
+    {% if not grouped.case_tagging %}
+    <p class="section-copy">No case-tagging questions in this round.</p>
+    {% endif %}
+    {% for question in grouped.case_tagging %}
+    <fieldset class="question">
+      <legend>{{ loop.index }}. {{ question.question_text }}</legend>
+      <div class="tag-grid">
+        {% for tag in case_tags %}
+        <label class="tag-choice">
+          <input type="checkbox" name="q_{{ question.id }}" value="{{ tag }}">
+          <span>{{ tag }}</span>
+        </label>
+        {% endfor %}
+      </div>
+    </fieldset>
+    {% endfor %}
+  </section>
+
+  <section class="panel">
+    <h2>Round {{ round_number }} Workflow Cards</h2>
+    <p class="section-copy">Move only the cards you would use into the workflow lane, arrange them in order, and add brief remarks.</p>
+    {% if not grouped.open_ended %}
+    <p class="section-copy">No workflow-card questions in this round.</p>
+    {% endif %}
+    {% for question in grouped.open_ended %}
+    <section class="question workflow-question" data-question-id="{{ question.id }}">
+      <h3>{{ loop.index }}. {{ question.question_text }}</h3>
+      <input type="hidden" name="q_{{ question.id }}_cards" class="workflow-card-order" required>
+      <div class="workflow-grid">
+        <div>
+          <h4>Card Bank</h4>
+          <div class="card-bank" aria-label="Available workflow cards">
+            {% for option in question.options | from_json %}
+            <button type="button" class="workflow-card" draggable="true" data-card-id="{{ option.id }}" data-card-text="{{ option.text }}">
+              {{ option.text }}
+            </button>
+            {% endfor %}
+          </div>
+        </div>
+        <div>
+          <h4>Use In This Order</h4>
+          <ol class="card-order-lane" aria-label="Selected workflow card order"></ol>
+        </div>
+      </div>
+      <label class="remarks-label">Short remarks
+        <textarea name="q_{{ question.id }}_remarks" rows="4" required placeholder="Add 1-3 sentences explaining your workflow."></textarea>
+      </label>
+    </section>
+    {% endfor %}
+  </section>
+
+  <div class="sticky-submit">
+    <button type="submit">Submit Assessment</button>
+    <p>Responses are stored centrally and graded by the backend.</p>
+  </div>
+</form>
+
+<script>
+  function syncWorkflow(questionEl) {
+    const hidden = questionEl.querySelector(".workflow-card-order");
+    const selected = Array.from(questionEl.querySelectorAll(".card-order-lane [data-card-id]")).map((item) => item.dataset.cardId);
+    hidden.value = selected.join(",");
+    questionEl.querySelectorAll(".card-bank [data-card-id]").forEach((button) => {
+      button.disabled = selected.includes(button.dataset.cardId);
+    });
+  }
+
+  function renderSelectedCard(questionEl, cardId, cardText) {
+    if (questionEl.querySelector(`.card-order-lane [data-card-id="${cardId}"]`)) return;
+    const lane = questionEl.querySelector(".card-order-lane");
+    const item = document.createElement("li");
+    item.className = "selected-card";
+    item.dataset.cardId = cardId;
+    item.draggable = true;
+    item.innerHTML = `
+      <span>${cardText}</span>
+      <div class="card-actions">
+        <button type="button" data-action="up" aria-label="Move up">Up</button>
+        <button type="button" data-action="down" aria-label="Move down">Down</button>
+        <button type="button" data-action="remove" aria-label="Remove">Remove</button>
+      </div>
+    `;
+    lane.appendChild(item);
+    syncWorkflow(questionEl);
+  }
+
+  document.querySelectorAll(".workflow-question").forEach((questionEl) => {
+    const lane = questionEl.querySelector(".card-order-lane");
+
+    questionEl.querySelectorAll(".workflow-card").forEach((button) => {
+      button.addEventListener("click", () => renderSelectedCard(questionEl, button.dataset.cardId, button.dataset.cardText));
+      button.addEventListener("dragstart", (event) => {
+        event.dataTransfer.setData("text/plain", JSON.stringify({ id: button.dataset.cardId, text: button.dataset.cardText }));
+      });
+    });
+
+    lane.addEventListener("dragover", (event) => event.preventDefault());
+    lane.addEventListener("drop", (event) => {
+      event.preventDefault();
+      const raw = event.dataTransfer.getData("text/plain");
+      if (!raw) return;
+      const card = JSON.parse(raw);
+      renderSelectedCard(questionEl, card.id, card.text);
+    });
+
+    lane.addEventListener("click", (event) => {
+      const button = event.target.closest("button");
+      if (!button) return;
+      const item = button.closest(".selected-card");
+      if (button.dataset.action === "remove") item.remove();
+      if (button.dataset.action === "up" && item.previousElementSibling) lane.insertBefore(item, item.previousElementSibling);
+      if (button.dataset.action === "down" && item.nextElementSibling) lane.insertBefore(item.nextElementSibling, item);
+      syncWorkflow(questionEl);
+    });
+  });
+</script>
+{% endblock %}

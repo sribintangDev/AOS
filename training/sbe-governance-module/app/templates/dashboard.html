@@ -1,0 +1,217 @@
+{% extends "base.html" %}
+{% block title %}Facilitator Dashboard{% endblock %}
+{% block content %}
+<section class="hero compact">
+  <div>
+    <p class="eyebrow">Facilitator Dashboard</p>
+    <h1>{{ session.title }}</h1>
+    <p>Consolidated participant responses, grading signals, discussion gaps, and exports.</p>
+  </div>
+  <div class="hero-actions">
+    <a class="button ghost" href="/facilitator/{{ session.id }}/slides">Slides</a>
+    <a class="button ghost" href="/api/training/sessions/{{ session.id }}/export.csv">CSV</a>
+    <a class="button ghost" href="/api/training/sessions/{{ session.id }}/export.json">JSON</a>
+    <a class="button ghost" href="/api/training/sessions/{{ session.id }}/export.pdf">PDF</a>
+    <a class="button ghost" href="/facilitator/logout">Logout</a>
+  </div>
+</section>
+
+<section class="panel round-panel">
+  <h2>Round Filter</h2>
+  <div class="round-tabs">
+    <a class="round-tab {% if active_round == 'all' %}active{% endif %}" href="/facilitator/{{ session.id }}">
+      <strong>All</strong>
+      <span>All rounds</span>
+    </a>
+    {% for number, label in rounds.items() %}
+    <a class="round-tab {% if active_round == number %}active{% endif %}" href="/facilitator/{{ session.id }}?round={{ number }}">
+      <strong>Round {{ number }}</strong>
+      <span>{{ label.split(": ", 1)[1] }}</span>
+    </a>
+    {% endfor %}
+  </div>
+</section>
+
+<section class="metrics">
+  <article>
+    <span>Total Participants</span>
+    <strong>{{ dashboard.total_participants }}</strong>
+  </article>
+  <article>
+    <span>Completion Rate</span>
+    <strong>{{ "%.1f"|format(dashboard.completion_rate) }}%</strong>
+  </article>
+  <article>
+    <span>Avg MCQ</span>
+    <strong>{{ "%.1f"|format(dashboard.average_mcq_score) }}%</strong>
+  </article>
+  <article>
+    <span>Avg Case Tags</span>
+    <strong>{{ "%.1f"|format(dashboard.average_case_tagging_score) }}%</strong>
+  </article>
+  <article>
+    <span>Avg AI Open</span>
+    <strong>{{ "%.1f"|format(dashboard.average_ai_open_ended_score) }}%</strong>
+  </article>
+</section>
+
+<section class="dashboard-grid">
+  <article class="panel">
+    <h2>Lowest Scoring Questions</h2>
+    {% if dashboard.lowest_scoring_questions %}
+    <ul class="compact-list">
+      {% for item in dashboard.lowest_scoring_questions %}
+      <li><strong>{{ "%.1f"|format(item.average_score) }}%</strong> {{ item.question_text }}</li>
+      {% endfor %}
+    </ul>
+    {% else %}
+    <p>No low-scoring questions yet.</p>
+    {% endif %}
+  </article>
+
+  <article class="panel">
+    <h2>Most Commonly Missed Tags</h2>
+    {% if dashboard.most_commonly_missed_tags %}
+    <ul class="compact-list">
+      {% for item in dashboard.most_commonly_missed_tags %}
+      <li><strong>{{ item.tag }}</strong> missed {{ item.count }} time{{ "s" if item.count != 1 else "" }}</li>
+      {% endfor %}
+    </ul>
+    {% else %}
+    <p>No missed tags yet.</p>
+    {% endif %}
+  </article>
+</section>
+
+<section class="panel">
+  <div class="section-head">
+    <h2>AI Discussion Summary</h2>
+    <form method="post" action="/facilitator/{{ session.id }}/discussion-summary{% if active_round != 'all' %}?round={{ active_round }}{% endif %}">
+      <button type="submit">Generate Summary</button>
+    </form>
+  </div>
+  {% if summary %}
+  <div class="summary-grid">
+    <article>
+      <h3>Top 5 Governance Gaps</h3>
+      <ul>
+        {% for item in summary.top_5_governance_gaps %}
+        <li>{{ item }}</li>
+        {% endfor %}
+      </ul>
+    </article>
+    <article>
+      <h3>Recommended Clarification Points</h3>
+      <ul>
+        {% for item in summary.recommended_clarification_points_for_exco %}
+        <li>{{ item }}</li>
+        {% endfor %}
+      </ul>
+    </article>
+    <article>
+      <h3>Participants Who Need Follow-Up</h3>
+      <p>{{ summary.participants_who_need_follow_up | join(", ") if summary.participants_who_need_follow_up else "None flagged." }}</p>
+    </article>
+    <article>
+      <h3>Next Training Focus</h3>
+      <p>{{ summary.suggested_next_training_focus }}</p>
+    </article>
+  </div>
+  {% else %}
+  <p>Generate the summary after submissions are available.</p>
+  {% endif %}
+</section>
+
+<section class="panel">
+  <h2>Question Review & Discussion</h2>
+  <div class="question-review-list">
+    {% for item in dashboard.question_review %}
+    <article class="question-review-card">
+      <div class="feedback-head">
+        <strong>Round {{ item.round_number }} · {{ item.question_type | replace("_", " ") | title }}</strong>
+        <span>{{ "%.1f"|format(item.average_score) ~ "%" if item.average_score is not none else "No attempts" }}</span>
+      </div>
+      <h3>{{ item.question_text }}</h3>
+      {% if item.question_type == "mcq" %}
+      <ul class="option-review">
+        {% for option in item.options %}
+        <li class="{% if option == item.correct_answer %}selected{% endif %}">
+          {{ option }}
+          {% if option == item.correct_answer %}<strong>Expected</strong>{% endif %}
+        </li>
+        {% endfor %}
+      </ul>
+      {% elif item.question_type == "case_tagging" %}
+      <p><strong>Expected tags:</strong> {{ item.expected_tags | join(", ") }}</p>
+      {% if item.optional_tags %}
+      <p><strong>Accepted optional tags:</strong> {{ item.optional_tags | join(", ") }}</p>
+      {% endif %}
+      <div class="tag-review">
+        {% for tag in item.options %}
+        <span class="{% if tag in item.expected_tags %}selected{% endif %}">{{ tag }}</span>
+        {% endfor %}
+      </div>
+      {% else %}
+      <h4>Facilitator-only ideal workflow</h4>
+      <ol class="selected-card-review">
+        {% for card in item.sample_cards %}
+        <li>{{ card.text }}</li>
+        {% endfor %}
+      </ol>
+      <p><strong>Sample remarks:</strong> {{ item.sample_remarks }}</p>
+      {% endif %}
+      <p class="muted">Discussion flags: {{ item.discussion_flags }}</p>
+      {% if item.common_misses %}
+      <ul class="compact-list">
+        {% for miss in item.common_misses %}
+        <li>{{ miss.gap }} · {{ miss.count }}</li>
+        {% endfor %}
+      </ul>
+      {% endif %}
+    </article>
+    {% endfor %}
+  </div>
+</section>
+
+<section class="panel">
+  <h2>Participant Response Table</h2>
+  <div class="table-wrap">
+    <table>
+      <thead>
+        <tr>
+          <th>Name</th>
+          <th>Role / Department</th>
+          <th>Email</th>
+          <th>Round</th>
+          <th>Status</th>
+          <th>MCQ</th>
+          <th>Case Tags</th>
+          <th>AI Open</th>
+          <th>Total</th>
+          <th>Discussion Flags</th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for row in dashboard.submissions %}
+        <tr>
+          <td>{{ row.participant_name }}</td>
+          <td>{{ row.participant_role }}</td>
+          <td>{{ row.participant_email or "" }}</td>
+          <td>Round {{ row.round_number }}</td>
+          <td>{{ row.status }}</td>
+          <td>{{ "%.1f"|format(row.mcq_score) }}%</td>
+          <td>{{ "%.1f"|format(row.case_tagging_score) }}%</td>
+          <td>{{ "%.1f"|format(row.ai_open_ended_score) }}%</td>
+          <td>{{ "%.1f"|format(row.total_score) }}%</td>
+          <td>{{ row.discussion_flags }}</td>
+        </tr>
+        {% else %}
+        <tr>
+          <td colspan="10">No submissions yet.</td>
+        </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+</section>
+{% endblock %}

@@ -1,0 +1,250 @@
+{% extends "base.html" %}
+{% block title %}AOS Governance Slides{% endblock %}
+{% block content %}
+<section class="presentation-shell" data-slide-total="{{ slides | length + 2 }}">
+  <div class="presentation-progress">
+    <span class="progress-bar"></span>
+  </div>
+
+  <article class="deck-slide title-slide is-active" data-slide>
+    <div class="slide-kicker">AOS Governance Training</div>
+    <div class="title-grid">
+      <div>
+        <h1>{{ session.title }}</h1>
+        <p class="slide-lead">Principal authority, financial discipline, Technical / IT tagging, escalation, and grey-area decision practice.</p>
+      </div>
+      <div class="decision-wheel reveal">
+        <div class="wheel-core">AOS<br>Case</div>
+        <span class="wheel-node principal">Principal</span>
+        <span class="wheel-node finance">Finance</span>
+        <span class="wheel-node technical">Technical / IT</span>
+        <span class="wheel-node cx">CX/Admin</span>
+        <span class="wheel-node management">Management</span>
+      </div>
+    </div>
+    <div class="title-visual">
+      <div class="reveal">
+        <strong>Round 1</strong>
+        <span>Live core discussion</span>
+      </div>
+      <div class="reveal">
+        <strong>Rounds 2-3</strong>
+        <span>Self-study and advanced cases</span>
+      </div>
+      <div class="reveal">
+        <strong>Outcome</strong>
+        <span>Clear owner, decision, communication, record</span>
+      </div>
+    </div>
+  </article>
+
+  <article class="deck-slide authority-slide" data-slide>
+    <div class="slide-kicker">Visual Map</div>
+    <h2>Who Owns The Decision?</h2>
+    <p class="slide-lead">Split authority before deciding. One case can carry several owners.</p>
+    <div class="authority-flow reveal">
+      <span>Case facts</span>
+      <b></b>
+      <span>Risk type</span>
+      <b></b>
+      <span>Authority owner</span>
+      <b></b>
+      <span>Decision + record</span>
+    </div>
+    <div class="authority-orbit">
+      <div class="authority-core reveal">
+        <strong>AOS Case</strong>
+        <span>facts, risk, owner, closure</span>
+      </div>
+      {% for item in tag_guidance %}
+      <section class="authority-node reveal node-{{ loop.index }}">
+        <h3>{{ item.tag }}</h3>
+        <p>{{ item.body }}</p>
+      </section>
+      {% endfor %}
+    </div>
+  </article>
+
+  {% for slide in slides %}
+  <article class="deck-slide {{ slide.type }}-slide" data-slide>
+    <div class="slide-kicker">{{ slide.type | title }}</div>
+    <h2>{{ slide.title }}</h2>
+    {% if slide.subtitle %}
+    <p class="slide-lead">{{ slide.subtitle }}</p>
+    {% endif %}
+
+    {% if slide.title == "Urgency Matrix" %}
+    <div class="matrix-visual">
+      <div class="matrix-axis y">Real Risk</div>
+      <div class="matrix-axis x">Parent Pressure</div>
+      <section class="matrix-cell high-risk reveal">
+        <strong>Act Now</strong>
+        <span>Safety, privacy, assessment access, security, public exposure</span>
+      </section>
+      <section class="matrix-cell pressure-only reveal">
+        <strong>Stay Calm</strong>
+        <span>Anger, repeated messages, demand for discount</span>
+      </section>
+      <section class="matrix-cell watch reveal">
+        <strong>Monitor</strong>
+        <span>Low risk, low pressure, normal workflow</span>
+      </section>
+      <section class="matrix-cell escalate reveal">
+        <strong>Contain Then Escalate</strong>
+        <span>Risk exists; final decision still follows authority</span>
+      </section>
+    </div>
+    <div class="risk-meter reveal">
+      <span>Pressure</span>
+      <div><i style="width: 34%"></i></div>
+      <strong>Risk decides urgency</strong>
+      <div><i style="width: 84%"></i></div>
+      <span>Real operational risk</span>
+    </div>
+    {% elif slide.title == "Escalation Ladder" %}
+    <div class="process-ribbon reveal">
+      <span>Contain</span>
+      <span>Own</span>
+      <span>Check</span>
+      <span>Decide</span>
+      <span>Tell</span>
+      <span>Record</span>
+    </div>
+    <ol class="ladder-visual">
+      {% for point in slide.points %}
+      <li class="reveal">
+        <span>{{ loop.index }}</span>
+        <strong>{{ point.split(". ", 1)[1] if ". " in point else point }}</strong>
+      </li>
+      {% endfor %}
+    </ol>
+    {% elif slide.points %}
+    <div class="split-authority-diagram reveal">
+      <section><strong>Decision Owner</strong><span>Principal / Finance / Management</span></section>
+      <section><strong>Evidence Owner</strong><span>Technical / IT / Admin records</span></section>
+      <section><strong>Communication Owner</strong><span>CX / School Admin</span></section>
+    </div>
+    <div class="point-wall">
+      {% for point in slide.points %}
+      <section class="big-point reveal">
+        <span>{{ "%02d"|format(loop.index) }}</span>
+        <p>{{ point }}</p>
+      </section>
+      {% endfor %}
+    </div>
+    {% else %}
+    <div class="case-path reveal">
+      <span>Risk?</span>
+      <b></b>
+      <span>Contain</span>
+      <b></b>
+      <span>Owner</span>
+      <b></b>
+      <span>Policy</span>
+      <b></b>
+      <span>Closure</span>
+    </div>
+    <div class="grey-area-layout">
+      <section class="scenario-card reveal">
+        <span>Scenario</span>
+        <p>{{ slide.scenario }}</p>
+      </section>
+      <section class="question-card reveal">
+        <span>Discuss</span>
+        <p>{{ slide.question }}</p>
+      </section>
+      <section class="tag-cloud-card reveal">
+        <span>Likely Tags</span>
+        <small>Highlighted tags apply to this case.</small>
+        <div class="tag-review">
+          {% for item in tag_guidance %}
+          <span class="{% if item.tag in slide.likely_tags %}selected{% else %}inactive{% endif %}">{{ item.tag }}</span>
+          {% endfor %}
+        </div>
+      </section>
+      <section class="guidance-card reveal click-reveal" data-click-reveal>
+        <span>Facilitator Guidance</span>
+        <button type="button" class="guidance-toggle">Show facilitator guidance</button>
+        <p class="guidance-secret">{{ slide.guidance }}</p>
+      </section>
+      <section class="warning-card reveal">
+        <span>What Not To Do</span>
+        <p>{{ slide.warning }}</p>
+      </section>
+    </div>
+    {% endif %}
+  </article>
+  {% endfor %}
+
+  <nav class="presentation-controls" aria-label="Slide controls">
+    <button type="button" class="slide-control" data-action="prev">‹ Back</button>
+    <span class="slide-counter"><b data-current-slide>1</b> / <span>{{ slides | length + 2 }}</span></span>
+    <button type="button" class="slide-control primary-control" data-action="next">Next ›</button>
+    <a class="slide-control link-control" href="/facilitator/{{ session.id }}">Dashboard</a>
+  </nav>
+</section>
+
+<script>
+  const deck = document.querySelector(".presentation-shell");
+  const slides = Array.from(document.querySelectorAll("[data-slide]"));
+  const currentEl = document.querySelector("[data-current-slide]");
+  const progressBar = document.querySelector(".progress-bar");
+  let slideIndex = 0;
+
+  function paint() {
+    slides.forEach((slide, index) => {
+      slide.classList.toggle("is-active", index === slideIndex);
+      slide.querySelectorAll(".reveal").forEach((item) => item.classList.toggle("is-visible", index === slideIndex));
+      if (index !== slideIndex) {
+        slide.querySelectorAll("[data-click-reveal]").forEach((item) => item.classList.remove("is-click-revealed"));
+      }
+    });
+    currentEl.textContent = String(slideIndex + 1);
+    progressBar.style.width = `${((slideIndex + 1) / slides.length) * 100}%`;
+  }
+
+  function next() {
+    if (slideIndex < slides.length - 1) {
+      slideIndex += 1;
+    }
+    paint();
+  }
+
+  function prev() {
+    if (slideIndex > 0) {
+      slideIndex -= 1;
+    }
+    paint();
+  }
+
+  document.querySelector('[data-action="next"]').addEventListener("click", next);
+  document.querySelector('[data-action="prev"]').addEventListener("click", prev);
+  document.querySelectorAll("[data-click-reveal]").forEach((item) => {
+    item.addEventListener("click", () => {
+      item.classList.add("is-click-revealed");
+      const button = item.querySelector(".guidance-toggle");
+      if (button) button.textContent = "Guidance revealed";
+    });
+  });
+  document.addEventListener("keydown", (event) => {
+    if (["ArrowRight", "PageDown", " "].includes(event.key)) {
+      event.preventDefault();
+      next();
+    }
+    if (["ArrowLeft", "PageUp"].includes(event.key)) {
+      event.preventDefault();
+      prev();
+    }
+    if (event.key === "Home") {
+      slideIndex = 0;
+      paint();
+    }
+    if (event.key === "End") {
+      slideIndex = slides.length - 1;
+      paint();
+    }
+  });
+
+  paint();
+</script>
+{% endblock %}

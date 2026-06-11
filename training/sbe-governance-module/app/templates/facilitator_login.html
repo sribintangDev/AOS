@@ -1,0 +1,18 @@
+{% extends "base.html" %}
+{% block title %}Facilitator Login{% endblock %}
+{% block content %}
+<section class="login-panel">
+  <h1>Facilitator Mode</h1>
+  <p>Enter the facilitator passcode to view consolidated responses and exports.</p>
+  {% if error %}
+  <p class="error">{{ error }}</p>
+  {% endif %}
+  <form method="post" action="/facilitator/login">
+    <input type="hidden" name="session_id" value="{{ session_id }}">
+    <label>Passcode
+      <input type="password" name="passcode" required autofocus>
+    </label>
+    <button type="submit">Open Dashboard</button>
+  </form>
+</section>
+{% endblock %}
