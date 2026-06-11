@@ -73,6 +73,17 @@ POSTGRES_URL
 `AOS_TRAINING_DATABASE_URL` is preferred because it avoids accidentally sharing
 the broader AOS app database setting unless that is intentional.
 
+For Replit, Supabase's shared pooler connection string is usually safer than
+the direct `db.<project-ref>.supabase.co` host, because the direct host may
+require IPv6. The module adds `sslmode=require` automatically when the Postgres
+URL does not specify an SSL mode.
+
+To inspect the configured database without printing the secret:
+
+```bash
+python scripts/check_database.py
+```
+
 The schema includes:
 
 - `training_sessions`

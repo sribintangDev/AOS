@@ -13,11 +13,15 @@ client = TestClient(app)
 def test_postgres_database_url_uses_psycopg_driver() -> None:
     assert (
         normalize_database_url("postgresql://user:pass@example.supabase.co:5432/postgres")
-        == "postgresql+psycopg://user:pass@example.supabase.co:5432/postgres"
+        == "postgresql+psycopg://user:pass@example.supabase.co:5432/postgres?sslmode=require"
     )
     assert (
         normalize_database_url("postgres://user:pass@example.supabase.co:5432/postgres")
-        == "postgresql+psycopg://user:pass@example.supabase.co:5432/postgres"
+        == "postgresql+psycopg://user:pass@example.supabase.co:5432/postgres?sslmode=require"
+    )
+    assert (
+        normalize_database_url("postgresql://user:pass@example.supabase.co:5432/postgres?sslmode=verify-full")
+        == "postgresql+psycopg://user:pass@example.supabase.co:5432/postgres?sslmode=verify-full"
     )
 
 

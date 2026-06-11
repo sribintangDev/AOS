@@ -3,6 +3,7 @@ from __future__ import annotations
 from collections.abc import Generator
 import os
 from pathlib import Path
+from urllib.parse import parse_qsl, urlencode, urlsplit, urlunsplit
 
 from sqlalchemy import create_engine
 from sqlalchemy.orm import DeclarativeBase, Session, sessionmaker
@@ -16,10 +17,16 @@ SQLITE_DATABASE_URL = f"sqlite:///{DATA_DIR / 'aos_training.db'}"
 
 
 def normalize_database_url(url: str) -> str:
+    url = url.strip().strip("\"'")
     if url.startswith("postgres://"):
-        return "postgresql+psycopg://" + url.removeprefix("postgres://")
+        url = "postgresql+psycopg://" + url.removeprefix("postgres://")
     if url.startswith("postgresql://"):
-        return "postgresql+psycopg://" + url.removeprefix("postgresql://")
+        url = "postgresql+psycopg://" + url.removeprefix("postgresql://")
+    if url.startswith("postgresql+psycopg://") and "sslmode=" not in url:
+        parsed = urlsplit(url)
+        query = dict(parse_qsl(parsed.query, keep_blank_values=True))
+        query["sslmode"] = "require"
+        url = urlunsplit((parsed.scheme, parsed.netloc, parsed.path, urlencode(query), parsed.fragment))
     return url
 
 
