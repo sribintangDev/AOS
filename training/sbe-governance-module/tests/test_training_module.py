@@ -23,6 +23,14 @@ def test_postgres_database_url_uses_psycopg_driver() -> None:
         normalize_database_url("postgresql://user:pass@example.supabase.co:5432/postgres?sslmode=verify-full")
         == "postgresql+psycopg://user:pass@example.supabase.co:5432/postgres?sslmode=verify-full"
     )
+    assert (
+        normalize_database_url("postgresql://postgres:pass@db.hjwifekfwmdklaxbazpz.supabase.co:5432/postgres")
+        == "postgresql+psycopg://postgres.hjwifekfwmdklaxbazpz:pass@aws-1-ap-northeast-1.pooler.supabase.com:6543/postgres?sslmode=require"
+    )
+    assert (
+        normalize_database_url("postgresql://postgres.hjwifekfwmdklaxbazpz:pass@aws-0-ap-northeast-1.pooler.supabase.com:6543/postgres?sslmode=require")
+        == "postgresql+psycopg://postgres.hjwifekfwmdklaxbazpz:pass@aws-1-ap-northeast-1.pooler.supabase.com:6543/postgres?sslmode=require"
+    )
 
 
 def test_public_session_hides_rubrics() -> None:

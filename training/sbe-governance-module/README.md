@@ -65,24 +65,39 @@ Postgres connection string:
 
 ```text
 AOS_TRAINING_DATABASE_URL
+SUPABASE_DATABASE_URL
 DATABASE_URL
 SUPABASE_DB_URL
 POSTGRES_URL
 ```
 
 `AOS_TRAINING_DATABASE_URL` is preferred because it avoids accidentally sharing
-the broader AOS app database setting unless that is intentional.
+the broader AOS app database setting unless that is intentional. The module also
+accepts the existing AOS `SUPABASE_DATABASE_URL` secret.
 
 For Replit, Supabase's shared pooler connection string is usually safer than
 the direct `db.<project-ref>.supabase.co` host, because the direct host may
 require IPv6. The module adds `sslmode=require` automatically when the Postgres
-URL does not specify an SSL mode.
+URL does not specify an SSL mode. For the transaction pooler on port `6543`,
+the module disables Psycopg prepared statements because Supavisor transaction
+mode does not support them.
 
 To inspect the configured database without printing the secret:
 
 ```bash
 python scripts/check_database.py
 ```
+
+## Replit Workflow
+
+The parent AOS Replit has a dedicated workflow named:
+
+```text
+Start SBE training module
+```
+
+It starts this standalone FastAPI module on local port `5055`, which the parent
+Replit maps to external port `3000`.
 
 The schema includes:
 
